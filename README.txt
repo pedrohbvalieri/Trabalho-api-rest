@@ -1,3 +1,7 @@
+Pedro Valieri - Kauan Vitor
+
+
+
 README - API REST DE PRODUTOS (PHP + MySQL + HTML)
 
 DESCRIÇÃO Este projeto é uma API REST simples para gerenciamento de
