@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos - API REST</title>
+  <style>
+    /* Reset básico */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #333;
+      padding: 30px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    h1 span {
+      color: #4f46e5;
+    }
+
+    .subtitulo {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 0.9rem;
+    }
+
+    /* Layout em duas colunas */
+    .layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* Caixas */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 16px;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Formulário */
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 4px;
+      margin-top: 12px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #4f46e5;
+    }
+
+    /* Botões */
+    .btn-grupo {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:hover { opacity: 0.85; }
+    button:active { transform: scale(0.97); }
+
+    .btn-verde   { background: #22c55e; color: white; }
+    .btn-azul    { background: #4f46e5; color: white; }
+    .btn-vermelho { background: #ef4444; color: white; font-size: 0.8rem; padding: 6px 12px; }
+
+    /* Lista de produtos */
+    .lista {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .produto-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1.5px solid #eee;
+      border-radius: 10px;
+      transition: border-color 0.2s;
+    }
+
+    .produto-item:hover {
+      border-color: #4f46e5;
+    }
+
+    .produto-info strong {
+      display: block;
+      font-size: 0.95rem;
+    }
+
+    .produto-info small {
+      color: #888;
+      font-size: 0.8rem;
+    }
+
+    .produto-preco {
+      font-weight: 700;
+      color: #22c55e;
+      font-size: 1rem;
+    }
+
+    /* Resposta da API */
+    #resposta {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      background: #1e1e2e;
+      color: #a6e3a1;
+      min-height: 60px;
+      display: none;
+    }
+
+    #resposta.erro {
+      color: #f38ba8;
+    }
+
+    .vazio {
+      text-align: center;
+      color: #aaa;
+      padding: 30px 0;
+      font-size: 0.9rem;
+    }
+
+    .topo-lista {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🛍️ API REST — <span>Produtos</span></h1>
+  <p class="subtitulo">Frontend consumindo a API PHP com GET, POST e DELETE</p>
+
+  <div class="layout">
+
+    <!-- COLUNA ESQUERDA: Formulário -->
+    <div>
+      <div class="card">
+        <h2>➕ Adicionar Produto</h2>
+
+        <label for="nome">Nome do produto</label>
+        <input type="text" id="nome" placeholder="Ex: Camiseta">
+
+        <label for="preco">Preço (R$)</label>
+        <input type="number" id="preco" placeholder="Ex: 49.90" step="0.01">
+
+        <div class="btn-grupo">
+          <button class="btn-verde" onclick="criarProduto()">Criar</button>
+          <button class="btn-azul" onclick="buscarTodos()">Atualizar Lista</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <h2>🔍 Buscar por ID</h2>
+        <label for="busca-id">ID do produto</label>
+        <input type="number" id="busca-id" placeholder="Ex: 1">
+        <div class="btn-grupo">
+          <button class="btn-azul" onclick="buscarPorId()">Buscar</button>
+        </div>
+      </div>
+
+      <!-- Resposta JSON da API -->
+      <pre id="resposta"></pre>
+    </div>
+
+    <!-- COLUNA DIREITA: Lista -->
+    <div class="card">
+      <div class="topo-lista">
+        <h2>📦 Produtos cadastrados</h2>
+        <span id="contador" style="font-size:0.8rem; color:#aaa;"></span>
+      </div>
+      <div class="lista" id="lista-produtos">
+        <p class="vazio">Carregando...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // URL base da sua API — muda se necessário
+    const API = "http://localhost/api-rest-v1/api/produtos.php";
+
+    // Mostra a resposta da API na tela (o JSON bruto)
+    function mostrarResposta(dados, isErro = false) {
+      const el = document.getElementById('resposta');
+      el.style.display = 'block';
+      el.textContent = JSON.stringify(dados, null, 2); // formata o JSON
+      el.className = isErro ? 'erro' : '';
+    }
+
+    // ========== GET todos ==========
+    async function buscarTodos() {
+      const lista = document.getElementById('lista-produtos');
+      lista.innerHTML = '<p class="vazio">Carregando...</p>';
+
+      try {
+        // fetch() faz a requisição HTTP
+        const res = await fetch(API);          // GET por padrão
+        const dados = await res.json();        // converte resposta pra objeto JS
+
+        if (!Array.isArray(dados) || dados.length === 0) {
+          lista.innerHTML = '<p class="vazio">Nenhum produto cadastrado.</p>';
+          document.getElementById('contador').textContent = '';
+          return;
+        }
+
+        document.getElementById('contador').textContent = `${dados.length} produto(s)`;
+
+        // Monta o HTML de cada produto
+        lista.innerHTML = dados.map(p => `
+          <div class="produto-item">
+            <div class="produto-info">
+              <strong>${p.nome}</strong>
+              <small>ID: ${p.id} — ${p.criado_em}</small>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span class="produto-preco">R$ ${parseFloat(p.preco).toFixed(2)}</span>
+              <button class="btn-vermelho" onclick="deletarProduto(${p.id})">Deletar</button>
+            </div>
+          </div>
+        `).join('');
+
+      } catch (err) {
+        lista.innerHTML = '<p class="vazio" style="color:red;">Erro ao conectar na API.</p>';
+        console.error(err);
+      }
+    }
+
+    // ========== GET por ID ==========
+    async function buscarPorId() {
+      const id = document.getElementById('busca-id').value;
+
+      if (!id) {
+        alert('Digite um ID!');
+        return;
+      }
+
+      // Passa o id como query string na URL
+      const res = await fetch(`${API}?id=${id}`);
+      const dados = await res.json();
+      mostrarResposta(dados, !res.ok);
+    }
+
+    // ========== POST ==========
+    async function criarProduto() {
+      const nome  = document.getElementById('nome').value.trim();
+      const preco = document.getElementById('preco').value;
+
+      if (!nome || !preco) {
+        alert('Preencha nome e preço!');
+        return;
+      }
+
+      // No POST, mandamos os dados no corpo da requisição como JSON
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, preco })  // converte objeto JS pra string JSON
+      });
+
+      const dados = await res.json();
+      mostrarResposta(dados, !res.ok);
+
+      if (res.ok) {
+        // Limpa o formulário e atualiza a lista
+        document.getElementById('nome').value = '';
+        document.getElementById('preco').value = '';
+        buscarTodos();
+      }
+    }
+
+    // ========== DELETE ==========
+    async function deletarProduto(id) {
+      if (!confirm(`Deletar produto ID ${id}?`)) return;
+
+      // No DELETE, passa o id na URL e muda o method
+      const res = await fetch(`${API}?id=${id}`, { method: 'DELETE' });
+      const dados = await res.json();
+      mostrarResposta(dados, !res.ok);
+
+      if (res.ok) buscarTodos(); // Atualiza a lista
+    }
+
+    // Carrega os produtos assim que a página abre
+    buscarTodos();
+  </script>
+
+</body>
+</html>
